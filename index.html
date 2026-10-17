@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ECHO – Dive Into The Dark</title><meta name="theme-color" content="#02030a"><meta name="description" content="ECHO: sonar your way through an endless dark cave."><meta name="apple-mobile-web-app-capable" content="yes">
+<style>
+:root{--bg:#02030a;--ink:#e8fbff;--acc:#5ff0ff;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#02030a;--ink:#e8fbff;--acc:#5ff0ff}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;overscroll-behavior:none}
+canvas{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;box-shadow:0 0 70px rgba(95,240,255,.09)}
+@media (max-height:560px){.ov h1{font-size:44px}.ov p{display:none}.ov .btn{padding:10px 26px}}
+#hud{position:fixed;left:0;right:0;top:env(safe-area-inset-top,0px);padding:14px;text-align:center;pointer-events:none}
+#depth{font-size:34px;font-weight:800;letter-spacing:1px;text-shadow:0 0 18px var(--acc)}
+#depth small{font-size:14px;opacity:.6;margin-left:4px}
+#pips{display:flex;gap:6px;justify-content:center;margin-top:6px}
+#pips i{width:10px;height:10px;border-radius:50%;border:1.5px solid var(--acc);opacity:.4}
+#pips i.on{background:var(--acc);opacity:1;box-shadow:0 0 8px var(--acc)}
+.ov{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;background:radial-gradient(circle,rgba(2,3,10,.2),rgba(2,3,10,.85))}
+.ov h1{font-size:clamp(54px,18vw,96px);margin:0;letter-spacing:.18em;text-indent:.18em;text-shadow:0 0 30px var(--acc),0 0 70px var(--acc)}
+.ov p{max-width:300px;opacity:.8;line-height:1.5;margin:10px 0 22px}
+.btn{border:0;border-radius:40px;padding:14px 38px;font-size:17px;font-weight:800;background:var(--acc);color:#02222a;cursor:pointer;box-shadow:0 0 28px var(--acc);margin:4px}
+.btn.alt{background:transparent;color:var(--acc);border:2px solid var(--acc);box-shadow:none}
+#over{display:none}
+#big{font-size:64px;font-weight:800;text-shadow:0 0 24px var(--acc)}
+#hint{position:fixed;left:0;right:0;bottom:calc(14vh + env(safe-area-inset-bottom,0px));text-align:center;font-size:22px;font-weight:800;letter-spacing:.08em;color:var(--acc);text-shadow:0 0 18px var(--acc);pointer-events:none;display:none;animation:hp 1.1s ease-in-out infinite}
+#hint small{display:block;font-size:13px;font-weight:600;letter-spacing:.04em;opacity:.7;margin-top:6px;color:var(--ink);text-shadow:none}
+@keyframes hp{0%,100%{opacity:.45;transform:scale(.96)}50%{opacity:1;transform:scale(1.05)}}
+#modes{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:340px;margin-bottom:6px}
+.chip{border:2px solid var(--acc);background:transparent;color:var(--acc);border-radius:30px;padding:8px 14px;font-size:13px;font-weight:800;letter-spacing:.08em;cursor:pointer}
+.chip.on{background:var(--acc);color:#02222a;box-shadow:0 0 18px var(--acc)}
+#mdesc{min-height:20px;font-size:14px;opacity:.85;margin:4px 0 16px}
+.sm{padding:8px 16px;font-size:12px;margin:6px 4px 0}
+#zone{position:fixed;left:0;right:0;top:28%;text-align:center;font-size:clamp(22px,7vw,36px);font-weight:800;letter-spacing:.3em;text-indent:.3em;color:var(--ink);text-shadow:0 0 24px var(--acc);opacity:0;pointer-events:none;transition:opacity .6s}
+#zone.show{opacity:1}
+#ctl{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);right:12px;display:none;gap:8px;z-index:5}
+#ctl button{width:42px;height:42px;border-radius:50%;border:2px solid var(--acc);background:rgba(2,3,10,.6);color:var(--acc);font-size:20px;line-height:1;cursor:pointer;box-shadow:0 0 12px rgba(95,240,255,.3)}
+#themes{display:flex;gap:10px;justify-content:center;margin:12px 0 4px}
+.th{width:28px;height:28px;border-radius:50%;border:2px solid transparent;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center}
+.th.on{border-color:#fff;box-shadow:0 0 14px currentColor}
+.th.lock{opacity:.35}
+#tot{opacity:.6;font-size:12px;margin-top:6px}
+.ov{overflow-y:auto}
+#lbt{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:340px}
+#lbl{width:100%;max-width:340px;max-height:38vh;overflow-y:auto;margin:10px 0 4px;text-align:left}
+.lr{padding:7px 12px;border-radius:10px;background:rgba(255,255,255,.06);margin:4px 0;font-weight:700}
+.lr.me{background:var(--acc);color:#02222a}
+#lbs{font-size:12px;opacity:.65;max-width:320px;min-height:16px}
+#nick{background:transparent;border:2px solid var(--acc);color:var(--ink);border-radius:30px;padding:8px 16px;font-size:14px;text-align:center;margin-bottom:8px;outline:none}
+@keyframes gl{0%,100%{text-shadow:0 0 24px var(--acc),0 0 50px var(--acc)}50%{text-shadow:0 0 40px var(--acc),0 0 100px var(--acc)}}
+#menu h1{animation:gl 3s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){#menu h1,#hint{animation:none}}
+</style></head><body>
+<canvas id="cv"></canvas>
+<div id="hud"><div id="depth">0<small>m</small></div><div id="pips"></div></div>
+<div id="hint">👆 TAP to send a sonar pulse<small>Drag to steer · gold orbs recharge your pulses</small></div>
+<div class="ov" id="pz" style="display:none"><h1 style="font-size:48px;animation:none">PAUSED</h1><div style="margin-top:18px"><button class="btn" id="rsm">RESUME</button><button class="btn alt" id="pzh">HOME</button></div></div>
+<div class="ov" id="lb" style="display:none"><h2 style="margin:0 0 12px;letter-spacing:.2em">🏆 LEADERBOARD</h2><div id="lbt"></div><div id="lbl"></div><div id="lbs"></div><div style="margin-top:12px"><input id="nick" maxlength="12" placeholder="Your nickname" autocomplete="off"></div><button class="btn alt" id="lbx">BACK</button></div>
+<div id="zone"></div>
+<div id="ctl"><button id="pb" title="Pause" aria-label="Pause">❚❚</button><button id="rs" title="Restart" aria-label="Restart">↻</button><button id="hm" title="Home" aria-label="Home">⌂</button></div>
+<div class="ov" id="menu"><h1>ECHO</h1><p>You’re sinking through a cave with no light. Tap to send a sonar pulse and see the walls. Drag to steer. Grab gold orbs to recharge.</p><div id="modes"></div><div id="mdesc"></div><button class="btn" id="play">DIVE</button><div><button class="btn alt sm" id="tm"></button><button class="btn alt sm" id="tf"></button><button class="btn alt sm" id="tl">🏆 SCORES</button></div><div id="themes"></div><div id="tot"></div><div style="opacity:.5;font-size:13px;margin-top:10px" id="bestm"></div></div>
+<div class="ov" id="over"><div style="opacity:.7;letter-spacing:.2em">YOU REACHED</div><div id="big">0m</div><p id="msg"></p><div><button class="btn" id="retry">DIVE AGAIN</button><button class="btn alt" id="share">SHARE</button><button class="btn alt" id="tomenu">MODES</button><button class="btn alt" id="tlo">🏆 SCORES</button></div></div>
+<script>
+const $=s=>document.querySelector(s),cv=$("#cv"),ctx=cv.getContext("2d");
+let W,H,dpr,s;
+function resize(){dpr=Math.min(devicePixelRatio||1,2);W=Math.min(innerWidth,560);H=innerHeight;cv.width=W*dpr;cv.height=H*dpr;cv.style.width=W+"px";cv.style.height=H+"px";cv.style.left=(innerWidth-W)/2+"px";s=Math.min(W,500)/500;try{px=Math.min(px,W-12);tx=Math.min(tx,W-12)}catch(e){}}
+addEventListener("resize",resize);resize();
+const pips=$("#pips");for(let i=0;i<8;i++)pips.appendChild(document.createElement("i"));
+let best=0;try{best=+localStorage.getItem("echo_best")||0}catch(e){}
+let sett={m:1,f:1},mode="classic",md=3,lastZ=0,mg,dl,thudT=0,SEED=0,th=0,tot=0,ds={n:0,last:0};
+const TH=[{h:190,n:0},{h:270,n:20},{h:335,n:60},{h:45,n:120},{h:140,n:250}];
+function dstreak(){const d=Math.floor(Date.now()/864e5);if(ds.last!==d){ds={n:ds.last===d-1?ds.n+1:1,last:d};try{localStorage.setItem("echo_ds",JSON.stringify(ds))}catch(e){}}}
+function chkUnlock(){try{localStorage.setItem("echo_tot",tot)}catch(e){}if(TH.some(x=>x.n===tot&&x.n>0)){const el=$("#zone");el.textContent="NEW THEME UNLOCKED";el.className="show";tone(440,1320,.9,"triangle",.18);setTimeout(()=>el.className="",2400)}}
+try{Object.assign(sett,JSON.parse(localStorage.getItem("echo_set")||"{}"));mode=localStorage.getItem("echo_mode")||"classic";th=+localStorage.getItem("echo_th")||0;tot=+localStorage.getItem("echo_tot")||0;ds=JSON.parse(localStorage.getItem("echo_ds")||"null")||ds}catch(e){}
+if(!TH[th]||tot<TH[th].n)th=0;
+const M={daily:{n:"DAILY",d:"Same cave for everyone today. Best score of the day counts.",mul:1,spd:1},classic:{n:"CLASSIC",d:"Dive deep. One crash ends it.",mul:1,spd:1},zen:{n:"ZEN",d:"No crashing. Just drift, pulse and listen.",mul:1,spd:.7},blackout:{n:"BLACKOUT",d:"No light at all. Pulses fade fast. Score ×2.",mul:2,spd:1},rush:{n:"RUSH",d:"Everything is 60% faster. Score ×1.5.",mul:1.5,spd:1.6}};
+if(!M[mode])mode="classic";
+const bk=()=>mode==="daily"?"echo_day_"+Math.floor(Date.now()/864e5):mode==="classic"?"echo_best":"echo_best_"+mode;
+const sc=()=>Math.floor((Math.floor(py/10)+orbs*10)*M[mode].mul);
+function loadBest(){best=0;try{best=+localStorage.getItem(bk())||0}catch(e){}}
+function showBest(){$("#bestm").textContent=best?M[mode].n+" best: "+best+"m":""}
+function saveSet(){try{localStorage.setItem("echo_set",JSON.stringify(sett))}catch(e){}}
+function ui(){
+ $("#modes").innerHTML=Object.keys(M).map(k=>'<button class="chip'+(k===mode?' on':'')+'" data-k="'+k+'">'+M[k].n+'</button>').join("");
+ $("#modes").querySelectorAll(".chip").forEach(b=>b.onclick=()=>{ac();mode=b.dataset.k;try{localStorage.setItem("echo_mode",mode)}catch(e){}loadBest();showBest();ui();tone(520,780,.2,"triangle",.15)});
+ const dn=Math.floor(Date.now()/864e5);$("#mdesc").textContent=M[mode].d+(mode==="daily"&&ds.n&&ds.last>=dn-1?" 🔥 "+ds.n+"-day streak":"");
+ $("#themes").innerHTML=TH.map((x,i)=>'<div class="th'+(i===th?' on':'')+(tot<x.n?' lock':'')+'" data-i="'+i+'" style="background:hsl('+x.h+',100%,62%);color:hsl('+x.h+',100%,62%)">'+(tot<x.n?'🔒':'')+'</div>').join("");
+ $("#themes").querySelectorAll(".th").forEach(e=>e.onclick=()=>{const i=+e.dataset.i;if(tot>=TH[i].n){th=i;try{localStorage.setItem("echo_th",i)}catch(x){}ui()}});
+ document.documentElement.style.setProperty("--acc","hsl("+TH[th].h+",100%,68%)");
+ const nx=TH.find(x=>x.n>tot);$("#tot").textContent="Orbs collected: "+tot+(nx?" · next theme at "+nx.n:" · all themes unlocked");
+ $("#tm").textContent="🎵 MUSIC: "+(sett.m?"ON":"OFF");$("#tf").textContent="🔊 SFX: "+(sett.f?"ON":"OFF");
+}
+$("#tm").onclick=()=>{ac();sett.m=sett.m?0:1;if(mg)mg.gain.value=sett.m?.5:0;saveSet();ui()};
+$("#tf").onclick=()=>{ac();sett.f=sett.f?0:1;saveSet();ui();tone(600,900,.2,"triangle",.15)};
+function home(){paused=false;$("#pz").style.display="none";if(A)try{A.resume()}catch(e){}state="menu";$("#hint").style.display="none";$("#ctl").style.display="none";$("#over").style.display="none";$("#menu").style.display="flex";ui()}
+$("#tomenu").onclick=home;$("#tl").onclick=showLB;$("#tlo").onclick=showLB;$("#lbx").onclick=hideLB;$("#nick").onchange=e=>{const v=e.target.value.replace(/[^\w \-]/g,"").trim().slice(0,12)||"Diver";e.target.value=v;try{localStorage.setItem("echo_nick",v)}catch(x){}};$("#pb").onclick=e=>{e.currentTarget.blur();setPause(true)};$("#rsm").onclick=()=>setPause(false);$("#pzh").onclick=()=>{setPause(false);home()};$("#hm").onclick=e=>{e.currentTarget.blur();home()};$("#rs").onclick=e=>{e.currentTarget.blur();start()};
+let DB=null,UID=null,canPost=null,lbm="classic";
+(async()=>{try{if(!window.claude)return;DB=await claude.use("db");const u=await claude.use("user");if(u){UID=await u.id();try{canPost=await u.can("data.write")}catch(e){}}}catch(e){}})();
+const bkm=m=>m==="daily"?"echo_day_"+Math.floor(Date.now()/864e5):m==="classic"?"echo_best":"echo_best_"+m;
+function nick(){let n="";try{n=localStorage.getItem("echo_nick")||""}catch(e){}if(!n){n="Diver"+(100+Math.random()*900|0);try{localStorage.setItem("echo_nick",n)}catch(e){}}return n}
+async function submit(m,d){
+ if(!DB||!UID||d<=0||canPost===false)return;
+ try{const r=DB.doc("scores/"+UID),sn=await r.get(),o=sn.exists?sn.data():{},dn=Math.floor(Date.now()/864e5);
+  o.nick=nick();
+  if(m==="daily"){if(o.d!==dn){o.d=dn;o.bd=0}if(d>(o.bd||0))o.bd=d}else{const f="b_"+m;if(d>(o[f]||0))o[f]=d}
+  await r.set(o)}catch(e){if(e&&e.code==="invalid_argument")canPost=false}
+}
+async function showLB(){
+ $("#lb").style.display="flex";$("#menu").style.display="none";$("#over").style.display="none";$("#nick").value=nick();
+ $("#lbt").innerHTML=Object.keys(M).map(k=>'<button class="chip'+(k===lbm?' on':'')+'" data-k="'+k+'">'+M[k].n+'</button>').join("");
+ $("#lbt").querySelectorAll(".chip").forEach(b=>b.onclick=()=>{lbm=b.dataset.k;showLB()});
+ const L=$("#lbl"),rows=[],f=lbm==="daily"?"bd":"b_"+lbm,dn=Math.floor(Date.now()/864e5);
+ L.textContent="Loading…";
+ if(DB){try{(await DB.collection("scores").orderBy(f,"desc").limit(100).get()).docs.forEach(x=>{const o=x.data();if(lbm==="daily"&&o.d!==dn)return;if(o[f]>0)rows.push({n:o.nick||"Diver",v:o[f],me:x.id===UID})})}catch(e){}}
+ L.textContent="";
+ rows.slice(0,20).forEach((r,i)=>{const d=document.createElement("div");d.className="lr"+(r.me?" me":"");d.textContent=(i+1)+". "+r.n+" — "+r.v+"m";L.appendChild(d)});
+ let lb=0;try{lb=+localStorage.getItem(bkm(lbm))||0}catch(e){}
+ $("#lbs").textContent=(DB?(canPost===false?"You can view this board but not post to it.":rows.length?"":"No scores yet — be the first!"):"The online board isn’t available for this viewer, so only this device’s best is shown.")+(lb?" Your best here: "+lb+"m":"");
+}
+function hideLB(){$("#lb").style.display="none";if(state==="over")$("#over").style.display="flex";else $("#menu").style.display="flex"}
+let pt=[],paused=false;
+function burst(x,y,n,h,v){for(let i=0;i<n;i++){const a=Math.random()*6.283,sp=(.3+Math.random())*v;pt.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,l:1,h})}}
+const buzz=n=>{try{if(navigator.vibrate)navigator.vibrate(n)}catch(e){}};
+function setPause(on){if(state!=="play")on=false;paused=on;$("#pz").style.display=on?"flex":"none";if(A)try{on?A.suspend():A.resume()}catch(e){}}
+const SC=[0,2,4,7,9],nf=(d,o)=>110*Math.pow(2,(SC[((d%5)+5)%5]+12*(o+Math.floor(d/5)))/12);
+function initMusic(){
+ mg=A.createGain();mg.gain.value=sett.m?.5:0;mg.connect(A.destination);
+ dl=A.createDelay(1);dl.delayTime.value=.44;const fb=A.createGain();fb.gain.value=.5;dl.connect(fb);fb.connect(dl);dl.connect(mg);
+ const lp=A.createBiquadFilter();lp.type="lowpass";lp.frequency.value=520;lp.connect(mg);
+ [55,82.4,110.3].forEach((f,i)=>{const o=A.createOscillator(),g=A.createGain();o.type=i?"sine":"triangle";o.frequency.value=f;g.gain.value=.11;o.connect(g);g.connect(lp);o.start()});
+ const lf=A.createOscillator(),lg=A.createGain();lf.frequency.value=.08;lg.gain.value=300;lf.connect(lg);lg.connect(lp.frequency);lf.start();
+ musTick();
+}
+function musTick(){
+ try{if(A&&sett.m&&Math.random()<.75){
+  md=Math.max(0,Math.min(11,md+[-2,-1,1,2][Math.random()*4|0]));
+  const o=A.createOscillator(),g=A.createGain(),n=A.currentTime;
+  o.type="triangle";o.frequency.value=nf(md,2);g.gain.setValueAtTime(.0001,n);g.gain.exponentialRampToValueAtTime(.18,n+.03);g.gain.exponentialRampToValueAtTime(.0001,n+1.6);
+  o.connect(g);g.connect(mg);g.connect(dl);o.start(n);o.stop(n+1.7)}}catch(e){}
+ setTimeout(musTick,Math.max(260,620-py/22));
+}
+const ZN=["TWILIGHT","MIDNIGHT","THE ABYSS","THE TRENCH","THE VOID"];
+function banner(z){const el=$("#zone");el.textContent=ZN[Math.min(z-1,4)]+" · "+z*250+"m";el.className="show";tone(220,880,1.1,"sine",.16);setTimeout(()=>el.className="",2200)}
+loadBest();showBest();ui();
+const hash=n=>{const x=Math.sin((n+SEED*7.13)*127.1+311.7)*43758.5453;return x-Math.floor(x)};
+const cx=y=>W/2+W*0.2*(Math.sin(y*0.0035+SEED)+0.7*Math.sin(y*0.0097+1.3+SEED*2))*Math.min(1,0.3+y/3000);
+const gap=y=>Math.max(150*s,330*s-y*0.025*s);
+const CELL=260;
+function obs(k){if(k<2||hash(k)<0.45)return null;const y=k*CELL+130;return{x:cx(y)+(hash(k+99)-0.5)*gap(y)*0.5,y,r:(16+hash(k+7)*14)*s}}
+function orb(k){if(k<1||hash(k+55)<0.55||col.has(k))return null;const y=k*CELL+40;return{x:cx(y)+(hash(k+3)-0.5)*gap(y)*0.6,y}}
+let state="menu",py=0,px=0,tx=0,energy=5,orbs=0,col=new Set(),pings=[],trail=[],t=0,autoPing=0,flash=0,keys={},down=false;
+const SPEED=420,MAXR=720;
+let A=null;
+function ac(){try{if(!A){A=new(window.AudioContext||window.webkitAudioContext)();initMusic()}if(A.state==="suspended")A.resume()}catch(e){}}
+function tone(f1,f2,d,type,v){if(!A||!sett.f)return;try{const o=A.createOscillator(),g=A.createGain(),n=A.currentTime;o.type=type;o.frequency.setValueAtTime(f1,n);o.frequency.exponentialRampToValueAtTime(f2,n+d);g.gain.setValueAtTime(v,n);g.gain.exponentialRampToValueAtTime(0.0001,n+d);o.connect(g);g.connect(A.destination);o.start();o.stop(n+d)}catch(e){}}
+function ping(free){if(paused)return;if(!free){if(energy<1&&mode!=="zen"){tone(120,90,.12,"square",.08);return}if(mode!=="zen")energy-=1;$("#hint").style.display="none"}pings.push({x:px,y:py,t:0});buzz(8);tone(nf(Math.floor(px/W*9),2)*2,nf(Math.floor(px/W*9),2),.9,"sine",.22)}
+function start(){ac();py=0;px=W/2;tx=px;energy=5;orbs=0;col=new Set();pings=[];trail=[];paused=false;$("#pz").style.display="none";SEED=mode==="daily"?Math.floor(Date.now()/864e5):Math.random()*500;lastZ=0;if(mode==="zen")energy=8;$("#ctl").style.display="flex";$("#hint").innerHTML=matchMedia("(pointer:coarse)").matches?"👆 TAP to send a sonar pulse<small>Drag anywhere to steer · gold orbs recharge pulses</small>":"🖱 CLICK or SPACE to send a pulse<small>Move the mouse or use ← → to steer · R restarts · P pauses</small>";state="play";$("#hint").style.display="block";$("#menu").style.display="none";$("#over").style.display="none";ping(true)}
+function die(){state="over";flash=1;if(mode==="daily")dstreak();burst(px,py,40,TH[th].h,260*s);buzz([60,40,120]);$("#ctl").style.display="none";$("#hint").style.display="none";tone(140,28,.9,"sawtooth",.3);const d=sc();let nb=d>best;if(nb){best=d;try{localStorage.setItem(bk(),best)}catch(e){}}showBest();
+ $("#big").textContent=d+"m";submit(mode,d);if(nb&&d>0)setTimeout(()=>{[0,2,4,7].forEach((k,i)=>setTimeout(()=>tone(nf(k,3),nf(k,3)*1.01,.5,"triangle",.14),i*110))},500);$("#msg").textContent=mode==="daily"?"Today’s best: "+best+"m · new cave tomorrow 🔥 "+ds.n+"-day streak":nb?"New personal record!":"Deepest: "+best+"m · Orbs: "+orbs;setTimeout(()=>{if(state==="over")$("#over").style.display="flex"},700)}
+function bright(x,y){
+ let b=mode==="blackout"?0:Math.max(0,1-Math.hypot(x-px,y-py)/(110*s))*.85;
+ for(const p of pings){const r=p.t*SPEED,d=Math.hypot(x-p.x,y-p.y);if(d<=r&&d<MAXR){const a=(r-d)/SPEED,v=a<.07?1:1-a/(mode==="blackout"?.9:2.2);if(v>b)b=v}}
+ return b}
+function update(dt){
+ t+=dt;flash=Math.max(0,flash-dt*2);for(const p of pt){p.x+=p.vx*dt;p.y+=p.vy*dt;p.l-=dt*1.1}pt=pt.filter(p=>p.l>0);
+ for(const p of pings)p.t+=dt;pings=pings.filter(p=>p.t<MAXR/SPEED+2.4);
+ if(state==="play"){
+  const sp=Math.min(120+py*0.02,300)*M[mode].spd;py+=sp*dt;
+  if(keys.ArrowLeft)tx-=520*dt;if(keys.ArrowRight)tx+=520*dt;
+  tx=Math.max(12,Math.min(W-12,tx));
+  px+=(tx-px)*Math.min(1,dt*9);
+  energy=Math.min(8,energy+dt/6);
+  const pr=8*s,g=gap(py),c=cx(py);
+  if(Math.abs(px-c)>g/2-pr){if(mode==="zen"){px=c+Math.sign(px-c)*(g/2-pr);tx=px;if(t-thudT>.4){thudT=t;tone(90,55,.2,"sine",.2)}}else return die()}
+  const k0=Math.floor(py/CELL);
+  for(let k=k0-1;k<=k0+1;k++){
+   const o=obs(k);if(o&&mode!=="zen"&&Math.hypot(px-o.x,py-o.y)<pr+o.r)return die();
+   const b=orb(k);if(b&&Math.hypot(px-b.x,py-b.y)<pr+16*s){col.add(k);orbs++;tot++;chkUnlock();burst(b.x,b.y,14,45,140*s);buzz(15);energy=Math.min(8,energy+1.5);[0,2,4].forEach((k,i)=>setTimeout(()=>tone(nf(k+5,3),nf(k+5,3)*1.01,.35,"triangle",.14),i*70))}
+  }
+  trail.push({x:px,y:py});if(trail.length>26)trail.shift();
+  const z=Math.floor(py/2500);if(z>lastZ){lastZ=z;banner(z)}
+  $("#depth").innerHTML=sc()+"<small>m</small>";
+  const e=Math.floor(energy);[...pips.children].forEach((el,i)=>el.className=i<e?"on":"");
+ }else{
+  py+=80*dt;px+=(cx(py+150)-px)*Math.min(1,dt*3);
+  autoPing-=dt;if(autoPing<0&&state==="menu"){autoPing=1.8;ping(true)}
+ }
+}
+function draw(){
+ ctx.setTransform(dpr,0,0,dpr,0,0);
+ ctx.fillStyle="#02030a";ctx.fillRect(0,0,W,H);
+ const cam=py-H*.32,hue=(TH[th].h+py*0.04)%360,sh=flash>0?(Math.random()-.5)*14*flash:0;
+ ctx.save();ctx.translate(sh,sh);
+ ctx.lineCap="round";
+ for(const side of[-1,1]){
+  let pv=null;
+  for(let y=cam-30;y<cam+H+30;y+=12){
+   const x=cx(y)+side*gap(y)/2,b=bright(x,y),pt={x,y:y-cam,b};
+   if(pv&&Math.max(pv.b,b)>.03){
+    const a=(pv.b+b)/2;
+    ctx.strokeStyle="hsla("+hue+",100%,70%,"+a*.18+")";ctx.lineWidth=9*s;ctx.beginPath();ctx.moveTo(pv.x,pv.y);ctx.lineTo(x,pt.y);ctx.stroke();
+    ctx.strokeStyle="hsla("+hue+",100%,75%,"+a+")";ctx.lineWidth=2.5*s;ctx.beginPath();ctx.moveTo(pv.x,pv.y);ctx.lineTo(x,pt.y);ctx.stroke()}
+   pv=pt}
+ }
+ const k0=Math.floor(cam/CELL);
+ for(let k=k0-1;k<=k0+Math.ceil(H/CELL)+1;k++){
+  const o=obs(k);
+  if(o){const b=bright(o.x,o.y);if(b>.03){ctx.fillStyle="hsla("+hue+",100%,60%,"+b*.12+")";ctx.strokeStyle="hsla("+hue+",100%,75%,"+b+")";ctx.lineWidth=2.5*s;ctx.beginPath();ctx.arc(o.x,o.y-cam,o.r,0,7);ctx.fill();ctx.stroke()}}
+  const b=orb(k);
+  if(b){const a=.45+.35*Math.sin(t*4+k),g=ctx.createRadialGradient(b.x,b.y-cam,0,b.x,b.y-cam,22*s);g.addColorStop(0,"rgba(255,220,90,"+a+")");g.addColorStop(1,"rgba(255,200,60,0)");ctx.fillStyle=g;ctx.beginPath();ctx.arc(b.x,b.y-cam,22*s,0,7);ctx.fill();ctx.fillStyle="#ffe066";ctx.beginPath();ctx.arc(b.x,b.y-cam,4*s,0,7);ctx.fill()}
+ }
+ for(const p of pings){const r=p.t*SPEED;if(r<MAXR){ctx.strokeStyle="hsla("+hue+",100%,80%,"+(1-r/MAXR)*.4+")";ctx.lineWidth=2;ctx.beginPath();ctx.arc(p.x,p.y-cam,r,0,7);ctx.stroke()}}
+ for(const p of pt){ctx.fillStyle="hsla("+p.h+",100%,70%,"+Math.max(0,p.l)+")";ctx.beginPath();ctx.arc(p.x,p.y-cam,(1.5+p.l*2)*s,0,7);ctx.fill()}
+ trail.forEach((q,i)=>{ctx.fillStyle="hsla("+hue+",100%,80%,"+i/trail.length*.35+")";ctx.beginPath();ctx.arc(q.x,q.y-cam,(2+i*.15)*s,0,7);ctx.fill()});
+ if(state!=="over"){const sy=py-cam,g=ctx.createRadialGradient(px,sy,0,px,sy,60*s);g.addColorStop(0,"hsla("+hue+",100%,80%,"+(mode==="blackout"?.1:.55)+")");g.addColorStop(1,"hsla("+hue+",100%,60%,0)");ctx.fillStyle=g;ctx.beginPath();ctx.arc(px,sy,60*s,0,7);ctx.fill();ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(px,sy,5*s,0,7);ctx.fill()}
+ ctx.restore();
+ if(flash>0){ctx.fillStyle="rgba(255,90,90,"+flash*.35+")";ctx.fillRect(0,0,W,H)}
+}
+let last=performance.now();
+function loop(n){const dt=Math.min(.05,(n-last)/1000);last=n;update(paused?0:dt);draw();requestAnimationFrame(loop)}
+requestAnimationFrame(loop);
+let sx0=0,sy0=0,stx=0,mvd=0;const CX=e=>e.clientX-cv.getBoundingClientRect().left;
+cv.addEventListener("pointerdown",e=>{down=true;sx0=e.clientX;sy0=e.clientY;stx=tx;mvd=0;try{cv.setPointerCapture(e.pointerId)}catch(x){}});
+addEventListener("contextmenu",e=>e.preventDefault());
+document.addEventListener("visibilitychange",()=>{if(document.hidden){if(state==="play")setPause(true);else if(A)try{A.suspend()}catch(e){}}else if(A&&!paused)try{A.resume()}catch(e){}});addEventListener("blur",()=>{if(state==="play")setPause(true)});
+addEventListener("pointerup",e=>{if(down&&state==="play"&&mvd<12)ping(false);down=false});addEventListener("pointercancel",()=>down=false);
+addEventListener("pointermove",e=>{if(down)mvd=Math.max(mvd,Math.hypot(e.clientX-sx0,e.clientY-sy0));if(state!=="play")return;if(e.pointerType==="mouse")tx=CX(e);else if(down)tx=stx+(e.clientX-sx0)*1.4});
+addEventListener("keydown",e=>{keys[e.key]=true;if((e.key==="r"||e.key==="R")&&state==="play")start();if((e.key==="p"||e.key==="P"||e.key==="Escape")&&state==="play")setPause(!paused);if(e.key===" "&&e.target.tagName!=="INPUT"){e.preventDefault();if(state==="play")ping(false);else if(state==="over"&&$("#over").style.display==="flex")start()}});
+addEventListener("keyup",e=>keys[e.key]=false);
+$("#play").onclick=start;$("#retry").onclick=start;
+$("#share").onclick=async()=>{const t="I dove "+$("#big").textContent+" into the dark in ECHO ("+M[mode].n+" mode) 🌊 Can you go deeper?";try{if(navigator.share)await navigator.share({text:t,url:location.href});else{await navigator.clipboard.writeText(t+" "+location.href);$("#share").textContent="COPIED!"}}catch(e){}};
+</script></body></html>
